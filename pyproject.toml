@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eye-tracker"
+version = "1.0.0"
+description = "Modular, Extensible Eye-Tracking solution using OpenCV and Python"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Stepan Filonov", email = "stepanfilonov@gmail.com"}
+]
+license = {text = "MIT"}
+keywords = ["eye-tracking", "opencv", "computer-vision", "blob-detection"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "opencv-python>=4.8.0",
+    "numpy>=1.24.0,<2.0.0",
+    "pillow>=10.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "black>=23.0.0",
+    "flake8>=6.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/stepacool/Eye-Tracker"
+Repository = "https://github.com/stepacool/Eye-Tracker"
+"Bug Tracker" = "https://github.com/stepacool/Eye-Tracker/issues"
