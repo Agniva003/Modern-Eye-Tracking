@@ -9,10 +9,30 @@ Usage:
     python main.py --debug                  # Enable debug mode
 """
 
-import cv2
 import argparse
 import sys
+import os
 from pathlib import Path
+
+# Try to import cv2 and provide helpful error message
+try:
+    import cv2
+except ImportError as e:
+    print("\n" + "="*60)
+    print("ERROR: OpenCV import failed!")
+    print("="*60)
+    if "libGL.so.1" in str(e):
+        print("\nYou're in a headless environment (like Codespaces).")
+        print("\nTo fix this, run:")
+        print("  chmod +x install.sh")
+        print("  ./install.sh")
+        print("\nOr manually:")
+        print("  pip uninstall opencv-python")
+        print("  pip install opencv-python-headless")
+    else:
+        print(f"\nError details: {e}")
+    print("="*60 + "\n")
+    sys.exit(1)
 
 from settings import (
     WINDOW_NAME, 
@@ -123,10 +143,21 @@ def print_startup_info(args):
     print(f"Detector type: {'Simple' if args.simple else 'Full (Haar Cascade + Blob)'}")
     print(f"Debug mode: {'Enabled' if args.debug else 'Disabled'}")
     print(f"Performance monitoring: {'Enabled' if args.perf else 'Disabled'}")
+    print(f"Display mode: {'Headless (no window)' if args.no_display else 'GUI'}")
+    
+    # Detect if running in headless environment
+    if not args.no_display:
+        if os.environ.get('DISPLAY') is None and sys.platform != 'win32':
+            print("\n⚠️  WARNING: No DISPLAY detected (headless environment)")
+            print("   GUI display may not work. Consider using --no-display flag.")
+    
     print("=" * 60)
     print("\nKeyboard Controls:")
-    print("  q - Quit application")
-    print("  s - Save debug frame")
+    if not args.no_display:
+        print("  q - Quit application")
+        print("  s - Save debug frame")
+    else:
+        print("  Ctrl+C - Stop application")
     if args.perf:
         print("  p - Print performance report")
         print("  r - Reset performance stats")
@@ -276,15 +307,34 @@ def main():
             
             # Display frame
             if not args.no_display:
-                cv2.imshow(WINDOW_NAME, processed_frame)
+                try:
+                    cv2.imshow(WINDOW_NAME, processed_frame)
+                except cv2.error as e:
+                    if frame_count == 1:  # Only show error once
+                        print(f"\n⚠️  Cannot display window: {e}")
+                        print("Running in headless mode. Use --no-display to suppress this warning.\n")
+                    args.no_display = True  # Switch to headless mode
+            else:
+                # In headless mode, save frame periodically
+                if frame_count % 30 == 0:  # Every 30 frames
+                    save_debug_frame(processed_frame, prefix=f"processed_frame_{frame_count}")
             
             if perf_monitor:
                 perf_monitor.end('rendering')
             
             # Handle keyboard input
-            key = cv2.waitKey(1) & 0xFF
-            if key != 255:  # Key was pressed
-                if not process_keyboard_input(key, processed_frame, perf_monitor):
+            if not args.no_display:
+                key = cv2.waitKey(1) & 0xFF
+                if key != 255:  # Key was pressed
+                    if not process_keyboard_input(key, processed_frame, perf_monitor):
+                        break
+            else:
+                # In headless mode, run for limited frames or until interrupted
+                if args.frame_source == 'file' and frame_count >= 1:
+                    print(f"Processed static image. Saved to debug folder.")
+                    break
+                elif frame_count >= 100 and args.frame_source == 'folder':
+                    print(f"Processed {frame_count} frames from folder.")
                     break
             
             if perf_monitor:
